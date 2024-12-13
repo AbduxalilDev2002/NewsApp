@@ -1,5 +1,6 @@
 package com.abduxalil.dev.mynewsapi.presenter
 
+import com.abduxalil.dev.mynewsapi.presenter.viewmodel.NewsViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,8 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,28 +39,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.rememberImagePainter
 import com.abduxalil.dev.mynewsapi.R
 import com.abduxalil.dev.mynewsapi.domain.entity.NewsRepo
-import com.abduxalil.dev.mynewsapi.presenter.navigation.MyNavigator
 import com.abduxalil.dev.mynewsapi.presenter.theme.MyNewsApiTheme
-import io.ktor.client.engine.android.Android
+import com.abduxalil.dev.mynewsapi.presenter.viewmodel.NewsState
 import org.koin.androidx.compose.koinViewModel
 
-@Composable
-fun NewsRepoScreen(
-    viewModel: NewsViewModel = koinViewModel<NewsViewModel>(),
-    navController: NavController
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+class NewsScreen : Screen {
+    @Composable
+    override fun Content() {
 
-    NewsRepoContent(
-        uiState = uiState,
-        onRetry = { viewModel.onFetchNewsRepos(uiState.inputText) },
-        onUpdateText = { inputText -> viewModel.onFetchNewsRepos(inputText) },
-        navController = navController // Pass NavController here
-    )
+        val viewModel: NewsViewModel = koinViewModel<NewsViewModel>()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        NewsRepoContent(
+            uiState = uiState,
+            onRetry = { viewModel.onFetchNewsRepos(uiState.inputText) },
+            onUpdateText = { inputText -> viewModel.onFetchNewsRepos(inputText) }
+        )
+    }
 }
 
 @Composable
@@ -66,8 +68,8 @@ private fun NewsRepoContent(
     uiState: NewsState,
     onRetry: () -> Unit,
     onUpdateText: (String) -> Unit,
-    navController: NavController // Add NavController parameter
-) {
+
+    ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Box(
             modifier = Modifier
@@ -101,7 +103,7 @@ private fun NewsRepoContent(
                 else -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Column(modifier = Modifier.padding(top = 70.dp)) {
-                            RepoList(repos = uiState.newsRepos, navController = navController) // Pass NavController here
+                            RepoList(repos = uiState.newsRepos)
                         }
                     }
                 }
@@ -151,7 +153,6 @@ private fun ErrorContent(modifier: Modifier, onRetry: () -> Unit) {
 }
 
 //================================
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBarNews(
@@ -201,16 +202,17 @@ fun SearchBarNews(
 //==================================
 // Composable to show the list of repositories
 @Composable
-private fun RepoList(repos: List<NewsRepo>, navController: NavController) {
+private fun RepoList(repos: List<NewsRepo>) {
     LazyColumn {
         items(repos) { repo ->
-            RepoItem(repo = repo, navController = navController) // Pass NavController here
+            RepoItem(repo = repo)
         }
     }
 }
 
 @Composable
-private fun RepoItem(repo: NewsRepo, navController: NavController) {
+private fun RepoItem(repo: NewsRepo) {
+    val navigator = LocalNavigator.currentOrThrow
     Column(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -218,23 +220,9 @@ private fun RepoItem(repo: NewsRepo, navController: NavController) {
             .background(Color.White, shape = RoundedCornerShape(16.dp))
             .padding(16.dp)
             .clickable {
-                navController.navigate("repoDetail/${repo.description}/${repo.id}/${repo.url}")
+                navigator.push(FullNewsScreen(repo))
             }
     ) {
-        Text(
-            text = repo.name,
-            color = Color.Black,
-            style = MaterialTheme.typography.headlineSmall,
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1
-        )
-        Text(
-            text = repo.description,
-            color = Color.Black,
-            style = MaterialTheme.typography.bodyMedium,
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1
-        )
         val imagePainter = rememberImagePainter(
             data = repo.url,
             builder = {
@@ -242,23 +230,39 @@ private fun RepoItem(repo: NewsRepo, navController: NavController) {
 
             }
         )
-
-
         Image(
             painter = imagePainter,
             contentDescription = "Repo Image",
+            contentScale = ContentScale.Crop,
             modifier = Modifier
-                .padding(top = 40.dp)
-                .size(260.dp)
+                .fillMaxWidth()
+                .height(150.dp)
+        )
+        Text(
+            text = repo.name,
+            color = Color.Black,
+            style = MaterialTheme.typography.headlineSmall,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(top = 20.dp)
+        )
+        Text(
+            text = repo.description,
+            color = Color.Black,
+            style = MaterialTheme.typography.bodyMedium,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(top = 10.dp, start = 10.dp, end = 10.dp)
         )
     }
 }
-
 
 @Preview(showSystemUi = true)
 @Composable
 fun MyNewsApiProject() {
     MyNewsApiTheme {
-        MyNavigator()
+
     }
 }

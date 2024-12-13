@@ -1,4 +1,4 @@
-package com.abduxalil.dev.mynewsapi.presenter
+package com.abduxalil.dev.mynewsapi.presenter.viewmodel
 
 import androidx.compose.runtime.Immutable
 import com.abduxalil.dev.mynewsapi.domain.entity.NewsRepo

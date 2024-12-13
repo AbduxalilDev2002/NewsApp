@@ -1,16 +1,16 @@
 package com.abduxalil.dev.mynewsapi.presenter
 
-import android.service.autofill.CustomDescription
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -18,74 +18,64 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.rememberImagePainter
-import com.abduxalil.dev.mynewsapi.R
 import com.abduxalil.dev.mynewsapi.domain.entity.NewsRepo
+import com.abduxalil.dev.mynewsapi.presenter.theme.MyNewsApiTheme
 
-
-@Composable
-fun RepoDetailScreen(
-    repoId: String?,
-    repoDescription: String?,
-    repoUrl: String? = "",
-    navController: NavController
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.padding(top = 20.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Back"
-            )
-        }
-        Log.d("TAGss", "RepoDetailScreen: $repoId $repoUrl")
+class FullNewsScreen(private val repo: NewsRepo) : Screen {
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(16.dp),
         ) {
-            val imagePainter = rememberImagePainter(
-                data = repoUrl,
-                builder = {
-                    crossfade(true)
-                }
-            )
+            IconButton(onClick = { navigator.pop() }) {
+                Icon(
+                    imageVector = Icons.Outlined.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.Black
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val imagePainter = rememberImagePainter(
+                    data = repo.url,
+                    builder = {
+                        crossfade(true)
+                    }
+                )
+                Image(
+                    painter = imagePainter,
+                    contentDescription = "Repo Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+                Text(
+                    text = repo.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .padding(top = 15.dp)
+                )
+                Text(
+                    text = repo.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                )
+            }
 
-            Image(
-                painter = imagePainter,
-                contentDescription = "Repo Image",
-                modifier = Modifier
-                    .padding(top = 40.dp)
-                    .size(260.dp)
-            )
-            Text(text = "Repo ID: $repoId")
-            Log.d("Tag", "all: ${repoId}/")
-            Text(
-                text = repoDescription.toString(),
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(top = 20.dp),
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1
-            )
-            Text(
-                text = repoDescription.toString(),
-                textAlign = TextAlign.Start,
-                fontSize = 16.sp,
-
-                modifier = Modifier.padding(top = 10.dp)
-            )
         }
     }
 }
